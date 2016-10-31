@@ -3,6 +3,41 @@ A baseline method to classify sarcastic tweets
 
 """
 import numpy as np
+from sklearn import svm
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.pipeline import FeatureUnion
+from sklearn.pipeline import Pipeline
+
+class SVM(object):
+	def __init__(self, pos_file, neg_file):
+		self.unigram_idx = {}
+		self.pos_data = np.asarray(np.load(pos_file))
+		self.neg_data = np.asarray(np.load(neg_file))
+		self.data = np.concatenate((self.pos_data, self.neg_data))
+
+		self.y_train = [1 for i in range(len(self.pos_data))] + [0 for i in range(len(self.neg_data))]
+
+		self.pipeline = Pipeline([
+			('union', FeatureUnion(
+				transformer_list=[
+					('bag_words', Pipeline([
+						('tfidf', TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, max_df=0.5, stop_words='english'))
+						])),
+					# add other features here as an element in transformer list
+					]
+				)),
+			('svc', svm.SVC()),
+			])	
+	def train(self):
+		print ("start trainnig")
+		self.pipeline.fit(self.data, self.y_train)
+		print ("finish training")
+
+	def test(self, file_name, class_id):
+		y_predict = self.pipeline.predict(np.load(file_name))
+		print (sum(y_predict), len(y_predict))
+
 
 class NBModel(object):
 	"""
@@ -90,16 +125,17 @@ class NBModel(object):
 		recall = float(pos_correct) / (pos_correct + neg_total - neg_correct)
 		f = 2 * precision * recall / (precision + recall)
 		# precision, true positive, how many selected items are correct
-		print "precision: ", precision
-
+		print ("precision: ", precision)
 		# recall, how many correct items are selected
-		print "recall: ", recall
+		print ("recall: ", recall)
 		# f-score: 2 * (precision * recall) / (precision + recall)
-
-		print "f: ", f
+		print ("f: ", f)
 
 
 if __name__ == "__main__":
-	model = NBModel("postrain.npy", "negtrain.npy")
-	model.train(0.09)
-	model.get_stat()
+	#model = NBModel("postrain.npy", "negtrain.npy")
+	#model.train(0.09)
+	#model.get_stat()
+	model = SVM("postrain.npy", "negtrain.npy")
+	model.train()
+	model.test("postest.npy", 1)

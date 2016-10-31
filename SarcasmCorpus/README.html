@@ -1,0 +1,53 @@
+<html><head><title>Sarcasm Corpus</title></head>
+<body bgcolor="#ffffff" text="#000000">
+
+
+<h1><font color=#8B0000>Sarcasm Corpus</font></h1>
+<h3>Reviews of Amazon products</h3>
+
+<hr>
+<p><font color=red><b>Disclaimer:</b></font> The reviews included into Sarcasm Corpus come from <a href="http://www.amazon.com">www.Amazon.com</a>, No control over the language used in the reviews is applied to the Sarcasm Corpus content. Sarcasm Corpus may include reviews which some people may find objectionable, inappropriate or offensive.</p>
+<hr>
+
+<p>This page is a distribution site for the collection of Amazon product reviews that can be used for sarcasm and irony analysis experiments. Available are:</p>
+
+<ul>
+<li> pairs of ironic -- regular reviews written for the same Amazon product;
+<li> unpaired ironic reviews;
+<li> unpaired regular reviews;
+<li> text utterances extracted from ironic reviews that were submitted to support the claim that these reviews were ironic.
+</ul>
+
+The description of the 2-step procedure for corpus collection was introduced in the following paper:
+
+<ul>
+<li> <a href="http://storm.cis.fordham.edu/~filatova">Elena Filatova</a>, Irony and Sarcasm: Corpus Generation and Analysis Using Crowdsourcing, <i>Proceedings of LREC 2012.</i>
+</ul>
+
+For each review we provide information about the product, for which this review was written, the number of stars that was assigned to the product by its authors, etc.
+
+<hr>
+<h3><font color=#8B0000>Downloadables:</font></h3>
+
+<b><a href="http://storm.cis.fordham.edu/~filatova/SarcasmCorpus.rar">Sarcasm corpus (.rar file)</a></b><br>
+<br>
+<b>Files included into the Sarcasm corpus archive file:</b>
+<ul>
+<li> <b>Ironic (.rar archive)</b>: this directory contains all the <i>ironic</i> Amazon product reviews that were submitted on Step 1 of the corpus collection procedure and confirmed as <i>ironic</i> on Step 2 by both majority voting and label quality control algorithm;
+<li> <b>Regular (.rar archive)</b>: this directory contains all the <i>regular</i> Amazon product reviews that were submitted on Step 1 of the corpus collection procedure and confirmed as <i>regular</i> on Step 2 by both majority voting and label quality control algorithm;
+<li> <b>file_pairing.txt</b>: this files lists the pairs of <i>ironic-regular</i> Amazon reviews as well as unpaired ironic and regular reviews. This files has 817 lines that start with either PAIRS, IRONIC, REGULAR (all elements in the lines are tab delimited):
+	<ul>
+	<li> PAIRS: <font face="Symbol">&#60;</font>file_name1<font face="Symbol">&#62;</font> (ironic) <font face="Symbol">&#60;</font>file_name2<font face="Symbol">&#62;</font> (regular)<BR>
+		<BLOCKQUOTE> such lines list pairs of <i>ironic-regular</i> Amazon reviews pairs submitted for the same product on Step 1;</BLOCKQUOTE>
+	<li> IRONIC: <font face="Symbol">&#60;</font>file_name<font face="Symbol">&#62;</font> <BR>
+		<BLOCKQUOTE> such lines list <i>ironic</i> Amazon reviews whose regular counterpart submitted for the same product on Step 1 were not supported as being regular on Step 2;</BLOCKQUOTE>
+	<li> REGULAR: <font face="Symbol">&#60;</font>file_name<font face="Symbol">&#62;</font> <BR>
+		<BLOCKQUOTE> such lines list <i>regular</i> Amazon reviews whose ironic counterpart submitted for the same product on Step 1 were not supported as being regular on Step 2;</BLOCKQUOTE>
+	</ul>
+The files has 331 PAIR lines, 106 IRONIC lines, and 486 REGULAR lines.
+<li> <b>sarcasm_lines.txt</b>: this file contains text utterances that were submitted on Step 1 for every ironic review as the utterances containing irony. These utterances can be short (one sentence) or as long as the whole review.
+<li> <b>file_labels.xls</b>: this file contains information on the initial star assignment for the reviews as well as the labels and stars assigned to the review texts on Step 2 of the corpus collection procedure.
+</ul>
+
+
+</body></html>
