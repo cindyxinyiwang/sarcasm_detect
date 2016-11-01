@@ -6,8 +6,25 @@ import numpy as np
 from sklearn import svm
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.decomposition import TruncatedSVD
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import FeatureUnion
 from sklearn.pipeline import Pipeline
+
+
+class CaptilizationExtractor(BaseEstimator, TransformerMixin):
+	def fit(self, x, y=None):
+		return self
+
+	def transform(self, posts):
+		features = [[0] for i in range(len(posts))]
+		for i, p in enumerate(posts):
+			toks = p.split()
+			for t in toks:
+				if t.isupper():
+					features[i][0] = 1
+					break
+		return features
 
 class SVM(object):
 	def __init__(self, pos_file, neg_file):
@@ -22,9 +39,13 @@ class SVM(object):
 			('union', FeatureUnion(
 				transformer_list=[
 					('bag_words', Pipeline([
-						('tfidf', TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, max_df=0.5, stop_words='english'))
+						('tfidf', TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, max_df=0.5, stop_words='english')),
+						('best', TruncatedSVD(n_components=50))
 						])),
 					# add other features here as an element in transformer list
+					('capitalize', Pipeline([
+						('cap_words', CaptilizationExtractor())
+						]))
 					]
 				)),
 			('svc', svm.SVC()),
