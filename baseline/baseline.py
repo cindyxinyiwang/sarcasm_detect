@@ -29,8 +29,12 @@ class CaptilizationExtractor(BaseEstimator, TransformerMixin):
 class SVM(object):
 	def __init__(self, pos_file, neg_file):
 		self.unigram_idx = {}
-		self.pos_data = np.asarray(np.load(pos_file))
-		self.neg_data = np.asarray(np.load(neg_file))
+		with open(pos_file) as myfile:
+			self.pos_data = np.asarray(myfile.readlines())
+		with open(neg_file) as myfile:
+			self.neg_data = np.asarray(myfile.readlines())
+		#self.pos_data = np.asarray(np.load(pos_file))
+		#self.neg_data = np.asarray(np.load(neg_file))
 		self.data = np.concatenate((self.pos_data, self.neg_data))
 
 		self.y_train = [1 for i in range(len(self.pos_data))] + [0 for i in range(len(self.neg_data))]
@@ -157,6 +161,6 @@ if __name__ == "__main__":
 	#model = NBModel("postrain.npy", "negtrain.npy")
 	#model.train(0.09)
 	#model.get_stat()
-	model = SVM("postrain.npy", "negtrain.npy")
+	model = SVM("pos_data/pos0.txt", "neg_data/neg0.txt")
 	model.train()
 	model.test("postest.npy", 1)
