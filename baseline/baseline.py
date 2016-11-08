@@ -114,22 +114,55 @@ class CaptilizationExtractor(BaseEstimator, TransformerMixin):
 		features = [[0] for i in range(len(posts))]
 		for i, p in enumerate(posts):
 			toks = p.split()
+			cap_count = 0
 			for t in toks:
 				if t.isupper():
 					features[i][0] = 1
 					break
+				if t[0].isupper():
+					cap_count += 1
+			if cap_count > 3:
+				features[i][0] = 1
+		return features
+
+class PuncuationExtractor(BaseEstimator, TransformerMixin):
+	def __init__(self):
+		self.punct = ["!", "?", "..."]
+
+	def fit(self, x, y=None):
+		return self
+
+	def transform(self, posts):
+		features = [[0] for i in range(len(posts))]
+		for i, p in enumerate(posts):
+			for punc in self.punct:
+				if punc in p:
+					features[i][0] = 1
 		return features
 
 class SVM(object):
 	def __init__(self, pos_file, neg_file):
-		self.unigram_idx = {}
-		with open(pos_file) as myfile:
-			self.pos_data = np.asarray(myfile.readlines())
-		with open(neg_file) as myfile:
-			self.neg_data = np.asarray(myfile.readlines())
-		self.data = np.concatenate((self.pos_data, self.neg_data))
+		self.data = []
+		for i in range(1):
+			pos_file = "pos_data/pos" + str(i) + ".txt"
+			with open(pos_file) as myfile:
+				for line in myfile:
+					self.data.append([line.rstrip(), '1'])
+		for i in range(1):
+			neg_file = "neg_data/neg" + str(i) + ".txt"
+			with open(neg_file) as myfile:
+				for line in myfile:
+					self.data.append([line.rstrip(), '0'])
 
-		self.y_train = [1 for i in range(len(self.pos_data))] + [0 for i in range(len(self.neg_data))]
+		np.random.shuffle(self.data)
+
+		x, y = [], []
+		for d in self.data:
+			x.append(d[0])
+			y.append(int(d[1]))
+
+		self.data = x
+		self.y_train = y
 
 		self.pipeline = Pipeline([
 			('union', FeatureUnion(
@@ -137,7 +170,7 @@ class SVM(object):
 					('capitalize', CaptilizationExtractor()),
 					('bag_words', Pipeline([
 						('preprocessor', NLTKPreprocessor()),
-						('tfidf', TfidfVectorizer(tokenizer=identity, preprocessor=None, lowercase=False)),
+						('tfidf', TfidfVectorizer(ngram_range=(1, 2), tokenizer=identity, preprocessor=None, lowercase=False)),
 						])),
 					# add other features here as an element in transformer list
 				])),
@@ -254,5 +287,5 @@ if __name__ == "__main__":
 	#model.get_stat()
 	model = SVM("pos_data/pos0.txt", "neg_data/neg0.txt")
 	model.train()
-	model.test("negtest.txt", 1)
+	#model.test("negtest.txt", 1)
 	model.test("postest.txt", 1)
