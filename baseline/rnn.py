@@ -6,6 +6,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import one_hot
 import numpy as np
 
+
 pos_data, neg_data, data = [], [], []
 pos_count, neg_count = 0, 0
 max_len = 20

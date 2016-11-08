@@ -1,6 +1,7 @@
 import numpy as np 
 
 
+"""
 pos = np.load("posproc.npy")
 neg = np.load("negproc.npy")
 
@@ -22,3 +23,10 @@ np.save("negtrain", neg_train)
 np.save("postest", pos_test)
 np.save("negtest", neg_test)
 
+"""
+
+postest = np.load("negtest.npy")
+out_file = open("negtest.txt", "w")
+for line in postest:
+	out_file.write(line.decode("utf-8"))
+	out_file.write('\n')

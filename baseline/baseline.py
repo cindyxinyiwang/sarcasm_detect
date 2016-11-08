@@ -11,6 +11,100 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import FeatureUnion
 from sklearn.pipeline import Pipeline
 
+from nltk.tokenize import RegexpTokenizer
+from stop_words import get_stop_words
+from nltk.stem.porter import PorterStemmer
+from gensim import corpora, models
+
+
+from nltk.corpus import stopwords as sw
+from nltk.corpus import wordnet as wn
+from nltk import wordpunct_tokenize
+from nltk import WordNetLemmatizer
+from nltk import sent_tokenize
+from nltk import pos_tag
+import string
+
+def identity(arg):
+    """
+    Simple identity function works as a passthrough.
+    """
+    return arg
+
+class TopicExtractor(BaseEstimator, TransformerMixin):
+	def fit(self, x, y=None):
+		return self
+
+	def transform(self, posts):
+		tokenizer = RegexpTokenizer(r'\w+')
+		# english stop words
+		en_stop = get_stop_words('en')
+		p_stemmer = PorterStemmer()
+		dictionary = corpora.Dictionary(posts)
+		texts = []
+		for p in posts:
+			tokens = tokenizer.tokenize(p.lower())
+			stopped_tokens = [i for i in tokens if not i in en_stop]
+			stemmed_tokens = [p_stemmer.stem(i) for i in stopped_tokens]
+			texts.append(stemmed_tokens)
+		dictionary = corpora.Dictionary(texts)
+		corpus = [dictionary.doc2bow(text) for text in texts]
+		ldamodel = gensim.models.ldamodel.LdaModel(corpus, num_topics=10, id2word=dictionary, passes=20)
+
+class NLTKPreprocessor(BaseEstimator, TransformerMixin):
+
+    def __init__(self, stopwords=None, punct=None,
+                 lower=True, strip=True):
+        self.lower      = lower
+        self.strip      = strip
+        self.stopwords  = stopwords or set(sw.words('english'))
+        self.punct      = punct or set(string.punctuation)
+        self.lemmatizer = WordNetLemmatizer()
+
+    def fit(self, X, y=None):
+        return self
+
+    def inverse_transform(self, X):
+        return [" ".join(doc) for doc in X]
+
+    def transform(self, X):
+        return [
+            list(self.tokenize(doc)) for doc in X
+        ]
+
+    def tokenize(self, document):
+        # Break the document into sentences
+        for sent in sent_tokenize(document):
+            # Break the sentence into part of speech tagged tokens
+            for token, tag in pos_tag(wordpunct_tokenize(sent)):
+                # Apply preprocessing to the token
+                token = token.lower() if self.lower else token
+                token = token.strip() if self.strip else token
+                token = token.strip('_') if self.strip else token
+                token = token.strip('*') if self.strip else token
+
+                # If stopword, ignore token and continue
+                if token in self.stopwords:
+                    continue
+
+                # If punctuation, ignore token and continue
+                if all(char in self.punct for char in token):
+                    continue
+
+                # Lemmatize the token and yield
+                lemma = self.lemmatize(token, tag)
+                yield lemma
+
+    def lemmatize(self, token, tag):
+        tag = {
+            'N': wn.NOUN,
+            'V': wn.VERB,
+            'R': wn.ADV,
+            'J': wn.ADJ
+        }.get(tag[0], wn.NOUN)
+
+        return self.lemmatizer.lemmatize(token, tag)
+
 
 class CaptilizationExtractor(BaseEstimator, TransformerMixin):
 	def fit(self, x, y=None):
@@ -33,25 +127,20 @@ class SVM(object):
 			self.pos_data = np.asarray(myfile.readlines())
 		with open(neg_file) as myfile:
 			self.neg_data = np.asarray(myfile.readlines())
-		#self.pos_data = np.asarray(np.load(pos_file))
-		#self.neg_data = np.asarray(np.load(neg_file))
 		self.data = np.concatenate((self.pos_data, self.neg_data))
 
 		self.y_train = [1 for i in range(len(self.pos_data))] + [0 for i in range(len(self.neg_data))]
 
 		self.pipeline = Pipeline([
 			('union', FeatureUnion(
-				transformer_list=[
+				transformer_list = [
+					('capitalize', CaptilizationExtractor()),
 					('bag_words', Pipeline([
-						('tfidf', TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, max_df=0.5, stop_words='english')),
-						('best', TruncatedSVD(n_components=50))
+						('preprocessor', NLTKPreprocessor()),
+						('tfidf', TfidfVectorizer(tokenizer=identity, preprocessor=None, lowercase=False)),
 						])),
 					# add other features here as an element in transformer list
-					('capitalize', Pipeline([
-						('cap_words', CaptilizationExtractor())
-						]))
-					]
-				)),
+				])),
 			('svc', svm.SVC()),
 			])	
 	def train(self):
@@ -60,7 +149,8 @@ class SVM(object):
 		print ("finish training")
 
 	def test(self, file_name, class_id):
-		y_predict = self.pipeline.predict(np.load(file_name))
+		data = [line.rstrip("\n") for line in open(file_name)]
+		y_predict = self.pipeline.predict(data)
 		print (sum(y_predict), len(y_predict))
 
 
@@ -127,8 +217,9 @@ class NBModel(object):
 		#print "result: ", result
 		return result
 
-	def test(self, data, classname):
+	def test(self, filename, classname):
 		#data = np.load(filename)
+		data = [line.rstrip("\n") for line in open(filename)]
 		total, correct = 0, 0
 		for d in data:
 			r = self.compute_sentence(d)
@@ -163,4 +254,5 @@ if __name__ == "__main__":
 	#model.get_stat()
 	model = SVM("pos_data/pos0.txt", "neg_data/neg0.txt")
 	model.train()
-	model.test("postest.npy", 1)
+	model.test("negtest.txt", 1)
+	model.test("postest.txt", 1)
