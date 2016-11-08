@@ -25,6 +25,9 @@ from nltk import sent_tokenize
 from nltk import pos_tag
 import string
 
+import multiprocessing
+from senti_classifier import senti_classifier
+
 def identity(arg):
     """
     Simple identity function works as a passthrough.
@@ -106,6 +109,11 @@ class NLTKPreprocessor(BaseEstimator, TransformerMixin):
         return self.lemmatizer.lemmatize(token, tag)
 
 
+def getScore(post):
+  pos_score, neg_score = senti_classifier.polarity_scores([post])
+  #print str(pos_score) + " " + str(neg_score)
+  return [pos_score, neg_score]
+
 class CaptilizationExtractor(BaseEstimator, TransformerMixin):
 	def fit(self, x, y=None):
 		return self
@@ -140,6 +148,18 @@ class PuncuationExtractor(BaseEstimator, TransformerMixin):
 					features[i][0] = 1
 		return features
 
+class EmotionExtractor(BaseEstimator, TransformerMixin):
+  def fit(self, x, y=None):
+    return self
+
+  def transform(self, posts):
+    """ Converts posts into a list of lists of values, where each inner list
+        is a 2 element vector with the first element being a positive emotion score
+        and the second element being a negative emotion score
+    """
+    pool = multiprocessing.Pool()
+    return pool.map(getScore, posts, 100)
+
 class SVM(object):
 	def __init__(self, pos_file, neg_file):
 		self.data = []
@@ -167,17 +187,23 @@ class SVM(object):
 		self.pipeline = Pipeline([
 			('union', FeatureUnion(
 				transformer_list = [
-					('capitalize', CaptilizationExtractor()),
 					('bag_words', Pipeline([
 						('preprocessor', NLTKPreprocessor()),
 						('tfidf', TfidfVectorizer(ngram_range=(1, 2), tokenizer=identity, preprocessor=None, lowercase=False)),
 						])),
 					# add other features here as an element in transformer list
-				])),
+					('capitalize', Pipeline([
+						('cap_words', CaptilizationExtractor())
+						])),
+          ('emotion', Pipeline([
+            ('emotion_words', EmotionExtractor())
+            ]))
+					]
+				)),
 			('svc', svm.SVC()),
 			])	
 	def train(self):
-		print ("start trainnig")
+		print ("start training")
 		self.pipeline.fit(self.data, self.y_train)
 		print ("finish training")
 
