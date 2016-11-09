@@ -28,6 +28,8 @@ import string
 import multiprocessing
 from senti_classifier import senti_classifier
 
+import re
+
 def identity(arg):
     """
     Simple identity function works as a passthrough.
@@ -135,18 +137,27 @@ class CaptilizationExtractor(BaseEstimator, TransformerMixin):
 
 class PuncuationExtractor(BaseEstimator, TransformerMixin):
 	def __init__(self):
-		self.punct = ["!", "?", "..."]
+		self.punct = [(re.compile('\!+'), 0), (re.compile('\?+'), 1), (re.compile('\.+'), 2)]
 
 	def fit(self, x, y=None):
 		return self
 
 	def transform(self, posts):
-		features = [[0] for i in range(len(posts))]
+		features = [[0 for i in range(len(self.punct))] for i in range(len(posts))]
 		for i, p in enumerate(posts):
-			for punc in self.punct:
-				if punc in p:
-					features[i][0] = 1
+			tokens = p.split()
+			for t in tokens:
+				for pattern, value in self.punct:
+					if pattern.match(t):
+						features[i][value] = 1
 		return features
+
+class TopicExtractor(BaseEstimator, TransformerMixin):
+	def fit(self, x, y=None):
+		return self
+
+	def transform(self, posts):
+		pass
 
 class EmotionExtractor(BaseEstimator, TransformerMixin):
   def fit(self, x, y=None):
@@ -163,12 +174,12 @@ class EmotionExtractor(BaseEstimator, TransformerMixin):
 class SVM(object):
 	def __init__(self, pos_file, neg_file):
 		self.data = []
-		for i in range(1):
+		for i in range(9):
 			pos_file = "pos_data/pos" + str(i) + ".txt"
 			with open(pos_file) as myfile:
 				for line in myfile:
 					self.data.append([line.rstrip(), '1'])
-		for i in range(1):
+		for i in range(9):
 			neg_file = "neg_data/neg" + str(i) + ".txt"
 			with open(neg_file) as myfile:
 				for line in myfile:
@@ -190,11 +201,14 @@ class SVM(object):
 					('bag_words', Pipeline([
 						('preprocessor', NLTKPreprocessor()),
 						('tfidf', TfidfVectorizer(ngram_range=(1, 2), tokenizer=identity, preprocessor=None, lowercase=False)),
+						#('tfidf', TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, max_df=0.5, stop_words='english')),
+						('best', TruncatedSVD(n_components=50))
 						])),
 					# add other features here as an element in transformer list
 					('capitalize', Pipeline([
 						('cap_words', CaptilizationExtractor())
 						])),
+					('punctuation', PuncuationExtractor())
           ('emotion', Pipeline([
             ('emotion_words', EmotionExtractor())
             ]))
@@ -313,5 +327,5 @@ if __name__ == "__main__":
 	#model.get_stat()
 	model = SVM("pos_data/pos0.txt", "neg_data/neg0.txt")
 	model.train()
-	#model.test("negtest.txt", 1)
+	model.test("negtest.txt", 1)
 	model.test("postest.txt", 1)
