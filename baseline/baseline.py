@@ -3,6 +3,10 @@ A baseline method to classify sarcastic tweets
 
 """
 import numpy as np
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import classification_report as clsr
+from sklearn.cross_validation import train_test_split as tts
 from sklearn import svm
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import HashingVectorizer
