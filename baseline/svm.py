@@ -11,6 +11,7 @@ from sklearn import svm
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.decomposition import TruncatedSVD
+from sklearn.decomposition import NMF
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import FeatureUnion
 from sklearn.pipeline import Pipeline
@@ -156,13 +157,6 @@ class PuncuationExtractor(BaseEstimator, TransformerMixin):
 						features[i][value] = 1
 		return features
 
-class TopicExtractor(BaseEstimator, TransformerMixin):
-	def fit(self, x, y=None):
-		return self
-
-	def transform(self, posts):
-		pass
-
 class EmotionExtractor(BaseEstimator, TransformerMixin):
   def fit(self, x, y=None):
     return self
@@ -186,9 +180,19 @@ def build_and_evaluate(X, y, classifier=svm.SVC, verbose=True):
 				transformer_list = [
 					('bag_words', Pipeline([
 						('preprocessor', NLTKPreprocessor()),
-						('tfidf', TfidfVectorizer(ngram_range=(1, 2), tokenizer=identity, preprocessor=None, lowercase=False)),
+						#('tfidf', TfidfVectorizer(ngram_range=(1, 2), tokenizer=identity, preprocessor=None, lowercase=False)),
 						#('tfidf', TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, max_df=0.5, stop_words='english')),
-						('best', TruncatedSVD(n_components=50))
+						('topics_and_ngrams', FeatureUnion(transformer_list = [
+							('grams', Pipeline([
+								('ngram', TfidfVectorizer(ngram_range=(1, 2), tokenizer=identity, preprocessor=None, lowercase=False)),
+								('best', TruncatedSVD(n_components=50))
+								])),
+							('topics', Pipeline([
+								('tfid', TfidfVectorizer(ngram_range=(1, 1), tokenizer=identity, preprocessor=None, lowercase=False)),
+								('topic', NMF(n_components=9, random_state=1,
+          						alpha=.1, l1_ratio=.5)),
+								])),			
+							])),
 						])),
 					# add other features here as an element in transformer list
 					('capitalize', Pipeline([
@@ -218,62 +222,6 @@ def build_and_evaluate(X, y, classifier=svm.SVC, verbose=True):
 
 	y_pred = model.predict(X_test)
 	print(clsr(y_test, y_pred))
-
-class SVM(object):
-	def __init__(self, pos_file, neg_file):
-		self.data = []
-		for i in range(9):
-			pos_file = "pos_data/pos" + str(i) + ".txt"
-			with open(pos_file) as myfile:
-				for line in myfile:
-					self.data.append([line.rstrip(), '1'])
-		for i in range(9):
-			neg_file = "neg_data/neg" + str(i) + ".txt"
-			with open(neg_file) as myfile:
-				for line in myfile:
-					self.data.append([line.rstrip(), '0'])
-
-		np.random.shuffle(self.data)
-
-		x, y = [], []
-		for d in self.data:
-			x.append(d[0])
-			y.append(int(d[1]))
-
-		self.data = x
-		self.y_train = y
-
-		self.pipeline = Pipeline([
-			('union', FeatureUnion(
-				transformer_list = [
-					('bag_words', Pipeline([
-						('preprocessor', NLTKPreprocessor()),
-						('tfidf', TfidfVectorizer(ngram_range=(1, 2), tokenizer=identity, preprocessor=None, lowercase=False)),
-						#('tfidf', TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, max_df=0.5, stop_words='english')),
-						('best', TruncatedSVD(n_components=50))
-						])),
-					# add other features here as an element in transformer list
-					('capitalize', Pipeline([
-						('cap_words', CaptilizationExtractor())
-						])),
-					('punctuation', PuncuationExtractor())
-          ('emotion', Pipeline([
-            ('emotion_words', EmotionExtractor())
-            ]))
-					]
-				)),
-			('svc', svm.SVC()),
-			])	
-	def train(self):
-		print ("start training")
-		self.pipeline.fit(self.data, self.y_train)
-		print ("finish training")
-
-	def test(self, file_name, class_id):
-		data = [line.rstrip("\n") for line in open(file_name)]
-		y_predict = self.pipeline.predict(data)
-		print (sum(y_predict), len(y_predict))
-
 
 if __name__ == "__main__":
 	data = []
