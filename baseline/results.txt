@@ -1,0 +1,37 @@
+n-gram only:
+
+             precision    recall  f1-score   support
+
+          0       0.57      0.96      0.71      5249
+          1       0.78      0.16      0.26      4606
+
+avg / total       0.67      0.59      0.50      9855
+
+
+n-gram + topic + cap + punctuation:
+classification Report: 
+
+             precision    recall  f1-score   support
+
+          0       0.57      0.94      0.71      5329
+          1       0.70      0.16      0.26      4526
+
+avg / total       0.63      0.58      0.50      9855
+
+
+ngram + cap:
+             precision    recall  f1-score   support
+
+          0       0.57      0.96      0.72      5293
+          1       0.77      0.16      0.27      4562
+
+avg / total       0.66      0.59      0.51      9855
+
+ngram + cap + punc:
+
+             precision    recall  f1-score   support
+
+          0       0.58      0.93      0.72      5372
+          1       0.70      0.20      0.31      4483
+
+avg / total       0.64      0.60      0.53      9855

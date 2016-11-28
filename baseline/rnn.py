@@ -4,6 +4,8 @@ from keras.layers import Input, LSTM, Embedding, Dense, merge
 from keras.models import Model, Sequential
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import one_hot
+from keras.engine.topology import Merge
+from keras.layers.core import Reshape
 import numpy as np
 
 
@@ -29,12 +31,24 @@ labels = [1 for i in range(pos_count)] + [0 for i in range(neg_count)]
 labels = np.array(labels)
 
 
+left = Sequential()
+left.add(LSTM(32, input_shape=(dataX.shape[1], dataX.shape[2]), init='uniform',
+	inner_init='uniform', forget_bias_init='one', return_sequences=False, activation='tanh',
+	inner_activation='sigmoid'))
+#left.add(Reshape((len(data), 32 * max_len)))
+
+right = Sequential()
+right.add(LSTM(32, input_shape=(dataX.shape[1], dataX.shape[2]), init='uniform',
+	inner_init='uniform', forget_bias_init='one', return_sequences=False, activation='tanh',
+	inner_activation='sigmoid', go_backwards=True))
+#right.add(Reshape((len(data), 32 * max_len)))
+
 model = Sequential()
-encode_tweet = LSTM(32, input_shape=(dataX.shape[1], dataX.shape[2]))
-model.add(encode_tweet)
-model.add(Dense(1, activation='softmax'))
+model.add(Merge([left, right], mode='ave'))
+
+model.add(Dense(1, activation='sigmoid'))
 
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-model.fit(dataX, labels, nb_epoch=10, batch_size=1, verbose=2)
+model.fit([dataX, dataX], labels, nb_epoch=10, batch_size=1, verbose=2)
 
 		

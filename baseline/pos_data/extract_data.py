@@ -1,6 +1,6 @@
 import numpy as np 
 
-neg = np.load("postrain.npy")
+neg = np.load("posproc.npy")
 l = len(neg)
 
 i_l = l / 10

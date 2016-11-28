@@ -1,6 +1,6 @@
 import numpy as np 
 
-neg = np.load("negtrain.npy")
+neg = np.load("negproc.npy")
 l = len(neg)
 
 i_l = l / 40

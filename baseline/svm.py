@@ -187,11 +187,11 @@ def build_and_evaluate(X, y, classifier=svm.SVC, verbose=True):
 								('ngram', TfidfVectorizer(ngram_range=(1, 2), tokenizer=identity, preprocessor=None, lowercase=False)),
 								('best', TruncatedSVD(n_components=50))
 								])),
-							('topics', Pipeline([
-								('tfid', TfidfVectorizer(ngram_range=(1, 1), tokenizer=identity, preprocessor=None, lowercase=False)),
-								('topic', NMF(n_components=9, random_state=1,
-          						alpha=.1, l1_ratio=.5)),
-								])),			
+							#('topics', Pipeline([
+							#	('tfid', TfidfVectorizer(ngram_range=(1, 1), tokenizer=identity, preprocessor=None, lowercase=False)),
+							#	('topic', NMF(n_components=9, random_state=1,
+          					#	alpha=.1, l1_ratio=.5)),
+							#	])),			
 							])),
 						])),
 					# add other features here as an element in transformer list
@@ -225,12 +225,12 @@ def build_and_evaluate(X, y, classifier=svm.SVC, verbose=True):
 
 if __name__ == "__main__":
 	data = []
-	for i in range(3):
+	for i in range(9):
 		pos_file = "pos_data/pos" + str(i) + ".txt"
 		with open(pos_file) as myfile:
 			for line in myfile:
 				data.append([line.rstrip(), '1'])
-	for i in range(3):
+	for i in range(9):
 		neg_file = "neg_data/neg" + str(i) + ".txt"
 		with open(neg_file) as myfile:
 			for line in myfile:

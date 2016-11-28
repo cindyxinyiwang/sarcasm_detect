@@ -94,6 +94,8 @@ lda = LatentDirichletAllocation(n_topics=n_topics, max_iter=5,
                                 random_state=0)
 t0 = time()
 lda.fit(tf)
+
+print (lda.transform(tf_vectorizer.transform(["this is a healthy way to eat"])))
 print("done in %0.3fs." % (time() - t0))
 
 print("\nTopics in LDA model:")
